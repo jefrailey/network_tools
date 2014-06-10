@@ -4,12 +4,12 @@ import socket
 
 def test_200_ok():
     s = HttpServer()
-    assert s.ok() == "HTTP/1.1 200 OK"
+    assert s.gen_response() == "HTTP/1.1 200 OK"
 
 
 def test_200_ok_byte():
     s = HttpServer()
-    assert isinstance(s.ok(), bytes)
+    assert isinstance(s.gen_response(), bytes)
 
 
 def test_socket_is_socket():

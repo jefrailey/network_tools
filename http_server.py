@@ -8,6 +8,7 @@ class HttpServer(object):
         self._port = port
         self._backlog = backlog
         self._socket = None
+        self._HTTPResponse = {200: 'OK'}
 
     def open_socket(self):
         self._socket = socket.socket(
@@ -21,3 +22,6 @@ class HttpServer(object):
         self._socket.shutdown(socket.SHUT_WR)
         self._socket.close()
         self._socket = None
+
+    def gen_response(self, code=200):
+        return "HTTP/1.1 {} {}".format(code, self._HTTPResponse[code])
