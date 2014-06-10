@@ -2,16 +2,15 @@ import socket
 
 
 class EchoServer(object):
-    """docstring for EchoServer"""
-    def __init__(self, ip='127.0.0.1', port=50000, backlog=1):
+    """a simple EchoServer"""
+    def __init__(self, ip='127.0.0.1', port=50000, backlog=5):
         self.ip = ip
         self.port = port
         self.backlog = backlog
         self.socket = socket.socket(
             socket.AF_INET,
             socket.SOCK_STREAM,
-            socket.IPPROTO_IP
-            )
+            socket.IPPROTO_IP)
         self.socket.bind((self.ip, self.port))
         self.socket.listen(self.backlog)
 
@@ -22,6 +21,8 @@ class EchoServer(object):
             if words:
                 self.connection.sendall(words)
             self.connection.close()
+            self.socket.close()
+            break
 
 if __name__ == "__main__":
     server = EchoServer()

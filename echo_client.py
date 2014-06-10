@@ -3,8 +3,7 @@ import sys
 
 
 class EchoClient(object):
-    """A simple echo client that speaks to EcoServer"""
-
+    """A simple echo client that speaks to an echo server"""
     def __init__(self, ip='127.0.0.1', port=50000):
         self.ip = ip
         self.port = port
@@ -12,9 +11,9 @@ class EchoClient(object):
             socket.AF_INET,
             socket.SOCK_STREAM,
             socket.IPPROTO_IP)
-        self.client_socket.connect((self.ip, self.port))
 
     def sendMessage(self, msg):
+        self.client_socket.connect((self.ip, self.port))
         self.client_socket.sendall(msg)
         self.client_socket.shutdown(socket.SHUT_WR)
         responseMsg = None
@@ -23,6 +22,7 @@ class EchoClient(object):
             if responseMsg is not None:
                 self.client_socket.close()
                 break
+        self.client_socket.close()
         return responseMsg
 
 if __name__ == '__main__':
