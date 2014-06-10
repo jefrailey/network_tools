@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import socket
 import Queue
 import threading
@@ -60,15 +61,14 @@ def test_EchoServer(setupEchoServer):
 
 def test_EcoServer_unicode(setupEchoServer):
     client_socket = setupEchoServer
-
-    test_string = u"Hello, EchoServer"
-    client_socket.sendall(test_string)
+    test_string = u"Hello, EchoÃServer"
+    client_socket.sendall(test_string.encode('utf-8'))
     client_socket.shutdown(socket.SHUT_WR)
 
     time.sleep(1)  # give the echo server a chance to respond
     response = client_socket.recv(32)  # grab the echo response
     client_socket.close()
-    assert isinstance(response, unicode)
+    assert response.decode('utf-8') == test_string
 
 
 def test_EchoClient():
