@@ -16,3 +16,8 @@ class HttpServer(object):
             socket.IPPROTO_IP)
         self._socket.bind((self._ip, self._port))
         self._socket.listen(self._backlog)
+
+    def close_socket(self):
+        self._socket.shutdown(socket.SHUT_WR)
+        self._socket.close()
+        self._socket = None
