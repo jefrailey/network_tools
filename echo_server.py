@@ -16,13 +16,18 @@ class EchoServer(object):
 
     def start_listening(self):
         while True:
+            request = []
             self.connection, self.addr = self.socket.accept()
-            words = self.connection.recv(32)
-            if words:
-                self.connection.sendall(unicode(words))
+
+            while True:
+                buffer_ = self.connection.recv(32)
+                if buffer_:
+                    request.append(buffer_)
+                else:
+                    break
+            self.connection.sendall(" ".join(request))
             self.connection.close()
-            self.socket.close()
-            break
+
 
 if __name__ == "__main__":
     server = EchoServer()
