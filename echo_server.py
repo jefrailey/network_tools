@@ -3,7 +3,7 @@ import socket
 
 class EchoServer(object):
     """a simple EchoServer"""
-    def __init__(self, ip='127.0.0.1', port=50000, backlog=5):
+    def __init__(self, ip=u'127.0.0.1', port=50000, backlog=5):
         self.ip = ip
         self.port = port
         self.backlog = backlog
@@ -19,7 +19,7 @@ class EchoServer(object):
             self.connection, self.addr = self.socket.accept()
             words = self.connection.recv(32)
             if words:
-                self.connection.sendall(words)
+                self.connection.sendall(unicode(words))
             self.connection.close()
             self.socket.close()
             break

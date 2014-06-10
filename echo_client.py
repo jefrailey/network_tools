@@ -4,7 +4,7 @@ import sys
 
 class EchoClient(object):
     """A simple echo client that speaks to an echo server"""
-    def __init__(self, ip='127.0.0.1', port=50000):
+    def __init__(self, ip=u'127.0.0.1', port=50000):
         self.ip = ip
         self.port = port
         self.client_socket = socket.socket(
@@ -23,7 +23,7 @@ class EchoClient(object):
                 self.client_socket.close()
                 break
         self.client_socket.close()
-        return responseMsg
+        return unicode(responseMsg)
 
 if __name__ == '__main__':
     client = EchoClient()

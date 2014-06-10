@@ -4,6 +4,7 @@ import threading
 from echo_server import EchoServer
 from echo_client import EchoClient
 import time
+import pytest
 
 
 def next_port():
@@ -17,8 +18,9 @@ def next_port():
 port_gen = next_port()
 
 
-def test_for_EchoServer():
-    test_ip = '127.0.0.1'
+@pytest.fixture(scope='function')
+def setupEchoServer():
+    test_ip = u'127.0.0.1'
     test_port = port_gen.next()
     q = Queue.Queue()
     t = threading.Thread(
@@ -34,8 +36,19 @@ def test_for_EchoServer():
         socket.IPPROTO_IP)
 
     client_socket.connect((test_ip, test_port))
+    return client_socket
 
-    test_string = "Hello, EchoServer"
+
+def run_EcoServer(q, test_ip, test_port):
+    es = EchoServer(test_ip, test_port)
+    es.start_listening()
+    q.put(True)
+
+
+def test_EchoServer(setupEchoServer):
+    client_socket = setupEchoServer
+
+    test_string = u"Hello, EchoServer"
     client_socket.sendall(test_string)
     client_socket.shutdown(socket.SHUT_WR)
 
@@ -45,14 +58,21 @@ def test_for_EchoServer():
     assert response == test_string
 
 
-def run_EcoServer(q, test_ip, test_port):
-    es = EchoServer(test_ip, test_port)
-    es.start_listening()
-    q.put(True)
+def test_EcoServer_unicode(setupEchoServer):
+    client_socket = setupEchoServer
+
+    test_string = u"Hello, EchoServer"
+    client_socket.sendall(test_string)
+    client_socket.shutdown(socket.SHUT_WR)
+
+    time.sleep(1)  # give the echo server a chance to respond
+    response = client_socket.recv(32)  # grab the echo response
+    client_socket.close()
+    assert isinstance(response, unicode)
 
 
-def test_for_EchoClient():
-    test_ip = '127.0.0.1'
+def test_EchoClient():
+    test_ip = u'127.0.0.1'
     test_port = port_gen.next()
     test_client = EchoClient(test_ip, test_port)
     q = Queue.Queue()
@@ -62,7 +82,7 @@ def test_for_EchoClient():
     t.daemon = True
     t.start()
     time.sleep(1)  # give the test server a chance to spin up
-    test_msg = "Hello, Test Server"
+    test_msg = u"Hello, Test Server"
     assert test_client.sendMessage(test_msg) == test_msg
 
 
