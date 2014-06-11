@@ -2,27 +2,27 @@ import socket
 
 
 class InvalidHttpCodeError(Exception):
-    """docstring for InvalidHttpCodeError"""
+    u"""Create InvalidHttpCodeError Exception"""
     pass
 
 
 class NotGETRequestError(Exception):
-    """docstring for InvalidHttpCodeError"""
+    u"""Create InvalidHttpCodeError Exception"""
     pass
 
 
 class NotHTTP1_1Error(Exception):
-    """docstring for InvalidHttpCodeError"""
+    u"""Create InvalidHttpCodeError Exception"""
     pass
 
 
 class BadRequestError(Exception):
-    """docstring for InvalidHttpCodeError"""
+    u"""Create InvalidHttpCodeError Exception"""
     pass
 
 
 class HttpServer(object):
-    """docstring for HttpServer"""
+    u"""Create an HTTP Server with the given endpoint."""
     def __init__(self, ip=u'127.0.0.1', port=50000, backlog=5):
         self._ip = ip
         self._port = port
@@ -40,6 +40,7 @@ class HttpServer(object):
             }
 
     def open_socket(self):
+        u"""Open a socket, bind it, and listen."""
         self._socket = socket.socket(
             socket.AF_INET,
             socket.SOCK_STREAM,
@@ -48,11 +49,13 @@ class HttpServer(object):
         self._socket.listen(self._backlog)
 
     def close_socket(self):
+        u"""Shutdown and close the socket."""
         self._socket.shutdown(socket.SHUT_WR)
         self._socket.close()
         self._socket = None
 
     def gen_response(self, code, msg=None):
+        u"""Generate response for the given HTTP status code."""
         try:
             if msg is None:
                 msg = self._statusCodes[code]
@@ -63,17 +66,22 @@ class HttpServer(object):
                 u'{} is not a valid HTTP code'.format(code))
 
     def start_listening(self):
+        u"""Accept a request from a client and return appropriate response."""
         while True:
             request = []
             connection, addr = self._socket.accept()
 
             while True:
+                # This is not collecting the expected (full) values from a
+                # request as can be seen by the print(request) in the try
+                # block
                 buffer_ = connection.recv(32)
                 if buffer_:
                     request.append(buffer_)
                 else:
                     break
             try:
+                print " ".join(request)
                 self.parse_request(" ".join(request))
             except NotGETRequestError:
                 connection.sendall(self.gen_response(405))
@@ -88,6 +96,7 @@ class HttpServer(object):
                 connection.close()
 
     def parse_request(self, request):
+        u"""Split status line into verb, URI, and protocol."""
         list_ = request.split("\r\n")
         status_line = list_[0].split(" ")
         if len(status_line) != 3:
@@ -100,11 +109,13 @@ class HttpServer(object):
 
 
 if __name__ == "__main__":
+    s = HttpServer()
     try:
-        s = HttpServer()
         s.open_socket()
         s.start_listening()
     except KeyboardInterrupt:
         s.close_socket()
     finally:
-        s.close_socket()
+        if s is not None and s._socket is not None:
+            s.close_socket()
+            print s._socket.getsockname()
