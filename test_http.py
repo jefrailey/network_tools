@@ -1,16 +1,40 @@
+# -*- coding: utf-8 -*-
 from http_server import (
     HttpServer,
     NotGETRequestError,
     NotHTTP1_1Error,
-    BadRequestError
-    )
+    BadRequestError,
+    ResourceNotFound)
 import socket
 import pytest
+import os
+
+
+@pytest.fixture(scope="session")
+def setup_test_resources(request):
+    path = os.getcwd() + "/root/testdir/"
+    if not os.path.exists(path):
+        os.makedirs(path)
+    filename = b"testfile1"
+    with open(os.path.join(path, filename), 'wb') as temp_file:
+        temp_file.write("")
+    filename = b"testfile2"
+    with open(os.path.join(path, filename), 'wb') as temp_file:
+        temp_file.write("")
+    if not os.path.exists(path + "/testsubdirectory"):
+        os.makedirs(path + "/testsubdirectory")
+
+    def teardown():
+        path = os.getcwd() + "/root/testdir/"
+        if not os.path.exists(path):
+            import shutil.rmtree
+            shutil.rmtree(path)
+    request.addfinalizer(teardown)
 
 
 def test_200_ok():
     s = HttpServer()
-    assert s.gen_response(200) == "HTTP/1.1 200 OK\r\n"
+    assert s.gen_response(200) == "HTTP/1.1 200 OK\r\n\r\n"
 
 
 def test_200_ok_byte():
@@ -37,29 +61,56 @@ def test_close_socket():
     assert s._socket is None
 
 
-def test_parse_one():
+def test_parse_one(setup_test_resources):
     s = HttpServer()
-    assert s.parse_request("GET /uri/ HTTP/1.1") == "/uri/"
+    body = s.process_request("GET /testdir/ HTTP/1.1")
+    expected_body = []
+    expected_body.append("<p>Directory Listing for /testdir/</p><ul>")
+    expected_body.append("<li> testfile1 </li>")
+    expected_body.append("<li> testfile2 </li>")
+    expected_body.append("<li> testsubdirectory </li></ul>")
+    assert body == "".join(expected_body)
+    #assert content_type == "type/html"
 
 
 def test_parse_2():
     s = HttpServer()
     with pytest.raises(NotGETRequestError):
-        s.parse_request("POST /uri/ HTTP/1.1")
+        s.process_request("POST /uri/ HTTP/1.1")
 
 
 def test_parse_3():
     s = HttpServer()
     with pytest.raises(NotHTTP1_1Error):
-        s.parse_request("GET /uri/ HTTP/1.0")
+        s.process_request("GET /uri/ HTTP/1.0")
 
 
 def test_parse_4():
     s = HttpServer()
     with pytest.raises(BadRequestError):
-        s.parse_request("GET/uri/HTTP/1.0")
+        s.process_request("GET/uri/HTTP/1.0")
 
 
 def test_gen_response_1():
     s = HttpServer()
-    assert s.gen_response(301) == 'HTTP/1.1 301 Moved Permanently\r\n'
+    assert s.gen_response(301) == 'HTTP/1.1 301 Moved Permanently\r\n\r\n'
+
+
+def test_retrieve_resource_1():
+    test_string = u"Here is text with some unicode in it: ÄÄÄÄÄÄÄÄÄÄ"
+    s = HttpServer()
+    body, content_type = s._retrieve_resource(b"test.html")
+    assert content_type == b"text/html"
+    assert body.decode('utf-8') == test_string
+
+
+def test_retrieve_resources_2():
+    s = HttpServer()
+    with pytest.raises(ResourceNotFound):
+        s._retrieve_resource(b"afilethatdoesntexist.123")
+
+
+def test_retrieve_resources_3():
+    s = HttpServer()
+    body, content_type = s._retrieve_resource(b"")
+    assert content_type == b"text/html"

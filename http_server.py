@@ -1,4 +1,9 @@
 import socket
+import mimetypes
+from os import getcwd
+from os.path import isdir
+from os.path import isfile
+from os import listdir
 
 
 class InvalidHttpCodeError(Exception):
@@ -21,6 +26,12 @@ class BadRequestError(Exception):
     pass
 
 
+class ResourceNotFound(Exception):
+    u"""An exception that is raised when a resources cannot be located
+          for the provided URI"""
+    pass
+
+
 class HttpServer(object):
     u"""Create an HTTP Server with the given endpoint."""
     def __init__(self, ip=u'127.0.0.1', port=50000, backlog=5):
@@ -28,16 +39,16 @@ class HttpServer(object):
         self._port = port
         self._backlog = backlog
         self._socket = None
+        self._root = getcwd() + b"/root/"
         self._statusCodes = {
-            200: 'OK',
-            301: 'Moved Permanently',
-            304: 'Not Modified',
-            400: 'Bad Request',
-            404: 'Not Found',
-            405: 'Method Not Allowed',
-            500: 'Internal Server Error',
-            505: 'HTTP version not supported'
-            }
+            200: b'OK',
+            301: b'Moved Permanently',
+            304: b'Not Modified',
+            400: b'Bad Request',
+            404: b'Not Found',
+            405: b'Method Not Allowed',
+            500: b'Internal Server Error',
+            505: b'HTTP version not supported'}
 
     def open_socket(self):
         u"""Open a socket, bind it, and listen."""
@@ -50,17 +61,23 @@ class HttpServer(object):
 
     def close_socket(self):
         u"""Shutdown and close the socket."""
-        self._socket.shutdown(socket.SHUT_WR)
+        #self._socket.shutdown(socket.SHUT_WR)
         self._socket.close()
         self._socket = None
 
-    def gen_response(self, code, msg=None):
+    def gen_response(self, code, body=None, **kwargs):
         u"""Generate response for the given HTTP status code."""
+        response = []
         try:
-            if msg is None:
-                msg = self._statusCodes[code]
-            response = "HTTP/1.1 {} {}\r\n".format(code, msg)
-            return response
+            response.append("HTTP/1.1 {} {}\r\n".format(
+                code, self._statusCodes[code]))
+            if kwargs:
+                for k, v in kwargs.items():
+                    response.append("{}: {}\r\n".format(k, v))
+            response.append("\r\n")
+            if body:
+                response.append(body)
+            return "".join(response)
         except KeyError:
             raise InvalidHttpCodeError(
                 u'{} is not a valid HTTP code'.format(code))
@@ -74,33 +91,64 @@ class HttpServer(object):
             while True:
                 buffer_ = connection.recv(buffersize)
                 request.append(buffer_)
-                if len(buffer_) != buffersize:
+                if len(buffer_) < buffersize:
                     break
             try:
-                self.parse_request("".join(request))
+                body, content_type = self.process_request("".join(request))
             except NotGETRequestError:
                 connection.sendall(self.gen_response(405))
             except BadRequestError:
                 connection.sendall(self.gen_response(400))
             except NotHTTP1_1Error:
                 connection.sendall(self.gen_response(505))
+            except ResourceNotFound:
+                connection.sendall(self.gen_response(404))
             else:
-                connection.sendall(self.gen_response(200))
+                connection.sendall(
+                    self.gen_response(200),
+                    body,
+                    {'Content-Type': content_type,
+                     'Content-Length': len(body)})
             finally:
                 connection.shutdown(socket.SHUT_RDWR)
                 connection.close()
 
-    def parse_request(self, request):
+    def process_request(self, request):
         u"""Split status line into verb, URI, and protocol."""
         list_ = request.split("\r\n")
-        status_line = list_[0].split(" ")
+        status_line = list_[0].split()
         if len(status_line) != 3:
             raise BadRequestError
         if status_line[0] != "GET":
             raise NotGETRequestError
         if status_line[2] != "HTTP/1.1":
             raise NotHTTP1_1Error
-        return status_line[1]
+
+        body, content_type = self._retrieve_resource(status_line[1])
+        return body
+
+    def _retrieve_resource(self, uri):
+        u"""
+        Get the resource specified by the uri if it exist.
+        Otherwise, raise a Exception
+        """
+        p = self._root + uri
+        if isdir(p):
+            body = ["<p>Directory Listing for "]
+            body.append(uri)
+            body.append("</p><ul>")
+            for res in listdir(p):
+                body.append("<li> {} </li>".format(res))
+            body.append("</ul>")
+            return ("".join(body), "text/html")
+        elif isfile(p):
+            with open(self._root + uri, 'r') as resource:
+                body = resource.read()
+                content_type, content_encoding = mimetypes.guess_type(uri)
+            return (body, content_type)
+        else:
+            print p
+            raise ResourceNotFound
 
 
 if __name__ == "__main__":
