@@ -59,7 +59,7 @@ class HttpServer(object):
         try:
             if msg is None:
                 msg = self._statusCodes[code]
-            response = "HTTP/1.1 {} {}".format(code, msg)
+            response = "HTTP/1.1 {} {}\r\n".format(code, msg)
             return response
         except KeyError:
             raise InvalidHttpCodeError(
@@ -67,21 +67,18 @@ class HttpServer(object):
 
     def start_listening(self):
         u"""Accept a request from a client and return appropriate response."""
+        buffersize = 32
         while True:
             request = []
             connection, addr = self._socket.accept()
-
             while True:
-                # This is not collecting the expected (full) values from a
-                # request as can be seen by the print(request) in the try
-                # block
-                buffer_ = connection.recv(32)
-                if buffer_:
+                buffer_ = connection.recv(buffersize)
+                if len(buffer_) == buffersize:
                     request.append(buffer_)
                 else:
+                    request.append(buffer_)
                     break
             try:
-                print " ".join(request)
                 self.parse_request(" ".join(request))
             except NotGETRequestError:
                 connection.sendall(self.gen_response(405))
