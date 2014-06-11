@@ -73,13 +73,11 @@ class HttpServer(object):
             connection, addr = self._socket.accept()
             while True:
                 buffer_ = connection.recv(buffersize)
-                if len(buffer_) == buffersize:
-                    request.append(buffer_)
-                else:
-                    request.append(buffer_)
+                request.append(buffer_)
+                if len(buffer_) != buffersize:
                     break
             try:
-                self.parse_request(" ".join(request))
+                self.parse_request("".join(request))
             except NotGETRequestError:
                 connection.sendall(self.gen_response(405))
             except BadRequestError:
