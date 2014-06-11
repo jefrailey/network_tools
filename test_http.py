@@ -10,7 +10,7 @@ import pytest
 
 def test_200_ok():
     s = HttpServer()
-    assert s.gen_response(200) == "HTTP/1.1 200 OK"
+    assert s.gen_response(200) == "HTTP/1.1 200 OK\r\n"
 
 
 def test_200_ok_byte():
@@ -62,4 +62,4 @@ def test_parse_4():
 
 def test_gen_response_1():
     s = HttpServer()
-    assert s.gen_response(301) == 'HTTP/1.1 301 Moved Permanently'
+    assert s.gen_response(301) == 'HTTP/1.1 301 Moved Permanently\r\n'
