@@ -69,6 +69,7 @@ def test_parse_one(setup_test_resources):
     expected_body.append("<li> testfile1 </li>")
     expected_body.append("<li> testfile2 </li>")
     expected_body.append("<li> testsubdirectory </li></ul>")
+    #  Consider creating this on the fly with a call to os.listdir()
     assert body == "".join(expected_body)
     #assert content_type == "type/html"
 
