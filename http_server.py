@@ -138,9 +138,17 @@ class HttpServer(object):
             body = ["<p>Directory Listing for "]
             body.append(uri)
             body.append("</p><ul>")
+            dirs = []
+            files = []
             for res in listdir(p):
                 if isdir(p+res):
-                    res += b'/'
+                    dirs.append(res + b'/')
+                else:
+                    files.append(res)
+            dirs.sort()
+            files.sort()
+            resources = dirs + files
+            for res in resources:
                 body.append('<li><a href="{}">{}</a></li>'.format(res, res))
             body.append("</ul>")
             return ("".join(body), "text/html")
