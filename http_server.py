@@ -61,7 +61,6 @@ class HttpServer(object):
 
     def close_socket(self):
         u"""Shutdown and close the socket."""
-        #self._socket.shutdown(socket.SHUT_WR)
         self._socket.close()
         self._socket = None
 
@@ -114,7 +113,6 @@ class HttpServer(object):
                 connection.sendall(response)
                 print response
             finally:
-                #connection.shutdown(socket.SHUT_RDWR)
                 connection.close()
 
     def process_request(self, request):
@@ -127,7 +125,6 @@ class HttpServer(object):
             raise NotGETRequestError
         if status_line[2] != "HTTP/1.1":
             raise NotHTTP1_1Error
-
         body, content_type = self._retrieve_resource(status_line[1])
         return body, content_type
 
@@ -151,7 +148,6 @@ class HttpServer(object):
                 content_type, content_encoding = mimetypes.guess_type(uri)
             return (body, content_type)
         else:
-            print p
             raise ResourceNotFound
 
 
@@ -165,4 +161,3 @@ if __name__ == "__main__":
     finally:
         if s is not None and s._socket is not None:
             s.close_socket()
-            #print s._socket.getsockname()
