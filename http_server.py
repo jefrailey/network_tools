@@ -65,16 +65,18 @@ class HttpServer(object):
         self._socket.close()
         self._socket = None
 
-    def gen_response(self, code, body=None, **kwargs):
+    def gen_response(self, code, body=None, kwargs={}):
         u"""Generate response for the given HTTP status code."""
         response = []
         try:
             response.append("HTTP/1.1 {} {}\r\n".format(
                 code, self._statusCodes[code]))
-            if kwargs:
-                for k, v in kwargs.items():
-                    response.append("{}: {}\r\n".format(k, v))
-            response.append("\r\n")
+            headers = kwargs.keys()
+            for header in headers:
+                    response.append("{}: {}\r\n".format(
+                        header,
+                        kwargs[header]))
+            response.append("\r\n")  # blank line between headers and body
             if body:
                 response.append(body)
             return "".join(response)
@@ -104,13 +106,15 @@ class HttpServer(object):
             except ResourceNotFound:
                 connection.sendall(self.gen_response(404))
             else:
-                connection.sendall(
-                    self.gen_response(200),
+                response = self.gen_response(
+                    200,
                     body,
                     {'Content-Type': content_type,
                      'Content-Length': len(body)})
+                connection.sendall(response)
+                print response
             finally:
-                connection.shutdown(socket.SHUT_RDWR)
+                #connection.shutdown(socket.SHUT_RDWR)
                 connection.close()
 
     def process_request(self, request):
@@ -125,7 +129,7 @@ class HttpServer(object):
             raise NotHTTP1_1Error
 
         body, content_type = self._retrieve_resource(status_line[1])
-        return body
+        return body, content_type
 
     def _retrieve_resource(self, uri):
         u"""
@@ -161,4 +165,4 @@ if __name__ == "__main__":
     finally:
         if s is not None and s._socket is not None:
             s.close_socket()
-            print s._socket.getsockname()
+            #print s._socket.getsockname()

@@ -63,7 +63,7 @@ def test_close_socket():
 
 def test_parse_one(setup_test_resources):
     s = HttpServer()
-    body = s.process_request("GET /testdir/ HTTP/1.1")
+    body, content_type = s.process_request("GET /testdir/ HTTP/1.1")
     expected_body = []
     expected_body.append("<p>Directory Listing for /testdir/</p><ul>")
     expected_body.append("<li> testfile1 </li>")
@@ -71,7 +71,7 @@ def test_parse_one(setup_test_resources):
     expected_body.append("<li> testsubdirectory </li></ul>")
     #  Consider creating this on the fly with a call to os.listdir()
     assert body == "".join(expected_body)
-    #assert content_type == "type/html"
+    assert content_type == "text/html"
 
 
 def test_parse_2():

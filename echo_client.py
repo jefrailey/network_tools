@@ -19,14 +19,15 @@ class EchoClient(object):
         self.client_socket.connect((self.ip, self.port))
         self.client_socket.sendall(msg)
         self.client_socket.shutdown(socket.SHUT_WR)
-        responseMsg = None
+        responseMsg = []
+        bufferSize = 32
         while True:
-            responseMsg = self.client_socket.recv(32).decode('utf-8')
-            if responseMsg is not None:
-                self.client_socket.close()
+            _buffer = self.client_socket.recv(bufferSize).decode('utf-8')
+            responseMsg.append(_buffer)
+            if len(_buffer) < bufferSize:
                 break
         self.client_socket.close()
-        return responseMsg
+        return "".join(responseMsg)
 
 if __name__ == '__main__':
     client = EchoClient()
