@@ -139,7 +139,9 @@ class HttpServer(object):
             body.append(uri)
             body.append("</p><ul>")
             for res in listdir(p):
-                body.append("<li> {} </li>".format(res))
+                if isdir(p+res):
+                    res += b'/'
+                body.append('<li><a href="{}">{}</a></li>'.format(res, res))
             body.append("</ul>")
             return ("".join(body), "text/html")
         elif isfile(p):
