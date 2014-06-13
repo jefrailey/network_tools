@@ -97,22 +97,29 @@ class HttpServer(object):
             try:
                 body, content_type = self.process_request("".join(request))
             except NotGETRequestError:
-                connection.sendall(self.gen_response(405))
+                code = 405
+                # connection.sendall(self.gen_response(405))
             except BadRequestError:
-                connection.sendall(self.gen_response(400))
+                code = 400
+                # connection.sendall(self.gen_response(400))
             except NotHTTP1_1Error:
-                connection.sendall(self.gen_response(505))
+                code = 505
+                # connection.sendall(self.gen_response(505))
             except ResourceNotFound:
-                connection.sendall(self.gen_response(404))
+                code = 404
+                # connection.sendall(self.gen_response(404))
             else:
-                response = self.gen_response(
-                    200,
-                    body,
-                    {'Content-Type': content_type,
-                     'Content-Length': len(body)})
-                connection.sendall(response)
+                code = 200
+                headers = {
+                    'Content-Type': content_type,
+                    'Content-Length': len(body)}
+            try:
+                response = self.gen_response(code, body, headers)
                 print response
+            except InvalidHttpCodeError:
+                response = self.gen_response(400, body, headers)  # Is this the right HTTP code?
             finally:
+                connection.sendall(response)
                 connection.close()
 
     def process_request(self, request):
