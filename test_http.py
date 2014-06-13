@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from http_server import (
-    HttpServer,
+from http_server_mt import HttpServerMT as HttpServer
+from http_server_mt import (
     NotGETRequestError,
     NotHTTP1_1Error,
     BadRequestError,
@@ -9,6 +9,9 @@ from http_server import (
 import socket
 import pytest
 import os
+import threading
+import Queue
+import time
 
 
 _status_codes = {
@@ -20,8 +23,22 @@ _status_codes = {
     404: b'Not Found',
     405: b'Method Not Allowed',
     500: b'Internal Server Error',
-    505: b'HTTP version not supported'
-    }
+    505: b'HTTP version not supported'}
+
+
+class StoppableThread(threading.Thread):
+    """Thread class with a stop() method. The thread itself has to check
+    regularly for the stopped() condition."""
+
+    def __init__(self, target, args):
+        super(StoppableThread, self).__init__(target=target, args=args)
+        self._stop = threading.Event()
+
+    def stop(self):
+        self._stop.set()
+
+    def stopped(self):
+        return self._stop.isSet()
 
 
 @pytest.fixture(scope="session")
@@ -39,10 +56,9 @@ def setup_test_resources(request):
         os.makedirs(path + "/testsubdirectory")
 
     def teardown():
-        import shutil
         path = os.getcwd() + "/root/testdir/"
-        if not os.path.exists(path):
-            import shutil.rmtree
+        if os.path.exists(path):
+            import shutil
             shutil.rmtree(path)
     request.addfinalizer(teardown)
 
@@ -158,3 +174,60 @@ def test_gen_all_codes():
     s = HttpServer()
     for code, msg in _status_codes.items():
         assert s._gen_response(code) == b'HTTP/1.1 {} {}\r\n'.format(code, msg)
+
+
+def test_http_server_mt():
+    test_ip = b'127.0.0.1'
+    test_port = 50000
+    q = Queue.Queue()  # used to know when clients have all gotten responses
+    t = StoppableThread(
+        target=run_http_server,
+        args=(test_ip, test_port))
+    t.daemon = True
+    t.start()
+    time.sleep(0.5)  # let server spin up
+
+    num_clients = 10
+    for i in range(num_clients):
+        t = StoppableThread(
+            target=run_http_testclient,
+            args=(q, i, test_ip, test_port))
+        t.daemon = True
+        t.start()
+
+    num_responses_received = -1
+    while num_responses_received < num_clients:
+        num_responses_received = q.qsize()
+
+    while not q.empty():
+        assert "Here is text with some unicode in it: ÄÄÄÄÄÄÄÄÄÄ" in q.get()
+    t.stop()
+    while not t.stopped():
+        pass
+
+
+def run_http_server(test_ip, test_port):
+    server = HttpServer(test_ip, test_port)
+    server.open_socket()
+    server.start_listening()
+
+
+def run_http_testclient(q, i, test_ip, test_port):
+    client_socket = socket.socket(
+        socket.AF_INET,
+        socket.SOCK_STREAM,
+        socket.IPPROTO_IP)
+    client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    print "Client {}: Connecting...".format(i)
+    client_socket.connect((test_ip, test_port))
+    print "Client {}: Sendall...".format(i)
+    test_request = b"GET /test.html HTTP/1.1"
+    client_socket.sendall(test_request)
+    response = ["Client {} Response:\r\n"]
+    while True:
+        response.append(client_socket.recv(4096))
+        if len(response[-1]) < 4096:
+            break
+    print "Client {}: Got Response. Shutting down client...".format(i)
+    client_socket.shutdown(socket.SHUT_WR)
+    q.put("".join(response))

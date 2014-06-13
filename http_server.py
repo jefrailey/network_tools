@@ -168,7 +168,7 @@ class HttpServer(object):
             dirs = []
             files = []
             for res in listdir(p):
-                if isdir(p+res):
+                if isdir(p + res):
                     dirs.append(res + b'/')
                 else:
                     files.append(res)
