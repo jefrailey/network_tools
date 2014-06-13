@@ -70,18 +70,18 @@ class HttpServer(object):
         try:
             response.append("HTTP/1.1 {} {}\r\n".format(
                 code, self._statusCodes[code]))
-            headers = kwargs.keys()
-            for header in headers:
-                    response.append("{}: {}\r\n".format(
-                        header,
-                        kwargs[header]))
-            response.append("\r\n")  # blank line between headers and body
-            if body:
-                response.append(body)
-            return "".join(response)
         except KeyError:
             raise InvalidHttpCodeError(
                 u'{} is not a valid HTTP code'.format(code))
+        headers = kwargs.keys()
+        for header in headers:
+                response.append("{}: {}\r\n".format(
+                    header,
+                    kwargs[header]))
+        response.append("\r\n")  # blank line between headers and body
+        if body:
+            response.append(body)
+        return "".join(response)
 
     def start_listening(self):
         u"""Accept a request from a client and return appropriate response."""
