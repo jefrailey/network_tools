@@ -56,6 +56,7 @@ class HttpServer(object):
             socket.AF_INET,
             socket.SOCK_STREAM,
             socket.IPPROTO_IP)
+        self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self._socket.bind((self._ip, self._port))
         self._socket.listen(self._backlog)
 
@@ -85,7 +86,7 @@ class HttpServer(object):
 
     def start_listening(self):
         u"""Accept a request from a client and return appropriate response."""
-        buffersize = 32
+        buffersize = 4096
         while True:
             request = []
             connection, addr = self._socket.accept()
@@ -160,7 +161,7 @@ class HttpServer(object):
             body.append("</ul>")
             return ("".join(body), "text/html")
         elif isfile(p):
-            with open(self._root + uri, 'r') as resource:
+            with open(self._root + uri, 'rb') as resource:
                 body = resource.read()
                 content_type, content_encoding = mimetypes.guess_type(uri)
             return (body, content_type)
