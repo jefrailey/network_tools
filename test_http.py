@@ -49,12 +49,12 @@ def setup_test_resources(request):
 
 def test_200_ok():
     s = HttpServer()
-    assert s.gen_response(200) == "HTTP/1.1 200 OK\r\n"
+    assert s._gen_response(200) == "HTTP/1.1 200 OK\r\n"
 
 
 def test_200_ok_byte():
     s = HttpServer()
-    assert isinstance(s.gen_response(200), bytes)
+    assert isinstance(s._gen_response(200), bytes)
 
 
 def test_socket_is_socket():
@@ -94,7 +94,7 @@ def test_parse_one(setup_test_resources):
     for res in resources:
         expected_body.append('<li><a href="{}">{}</a></li>'.format(res, res))
     expected_body.append("</ul>")
-    body, content_type = s.process_request("GET /testdir/ HTTP/1.1")
+    body, content_type = s._process_request("GET /testdir/ HTTP/1.1")
     assert body == "".join(expected_body)
     assert content_type == "text/html"
 
@@ -102,24 +102,24 @@ def test_parse_one(setup_test_resources):
 def test_parse_2():
     s = HttpServer()
     with pytest.raises(NotGETRequestError):
-        s.process_request("POST /uri/ HTTP/1.1")
+        s._process_request("POST /uri/ HTTP/1.1")
 
 
 def test_parse_3():
     s = HttpServer()
     with pytest.raises(NotHTTP1_1Error):
-        s.process_request("GET /uri/ HTTP/1.0")
+        s._process_request("GET /uri/ HTTP/1.0")
 
 
 def test_parse_4():
     s = HttpServer()
     with pytest.raises(BadRequestError):
-        s.process_request("GET/uri/HTTP/1.0")
+        s._process_request("GET/uri/HTTP/1.0")
 
 
 def test_gen_response_1():
     s = HttpServer()
-    assert s.gen_response(301) == 'HTTP/1.1 301 Moved Permanently\r\n'
+    assert s._gen_response(301) == 'HTTP/1.1 301 Moved Permanently\r\n'
 
 
 def test_retrieve_resource_1():
@@ -151,10 +151,10 @@ def test_forbidden_error1():
 def test_gen_response2():
     u"""Assert that 403 error response is generated."""
     s = HttpServer()
-    assert s.gen_response(403) == b'HTTP/1.1 403 Forbidden\r\n'
+    assert s._gen_response(403) == b'HTTP/1.1 403 Forbidden\r\n'
 
 
 def test_gen_all_codes():
     s = HttpServer()
     for code, msg in _status_codes.items():
-        assert s.gen_response(code) == b'HTTP/1.1 {} {}\r\n'.format(code, msg)
+        assert s._gen_response(code) == b'HTTP/1.1 {} {}\r\n'.format(code, msg)

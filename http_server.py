@@ -71,7 +71,7 @@ class HttpServer(object):
         self._socket.close()
         self._socket = None
 
-    def gen_response(self, code, body=None, headers={}):
+    def _gen_response(self, code, body=None, headers={}):
         u"""Generate response for the given HTTP status code."""
         # Would like to use **kwargs instead of headers, but
         # given that some of the headers are dash seperated,
@@ -110,7 +110,7 @@ class HttpServer(object):
             body = b""
             headers = {}
             try:
-                body, content_type = self.process_request("".join(request))
+                body, content_type = self._process_request("".join(request))
             except ForbiddenError:
                 code = 403
             except NotGETRequestError:
@@ -129,10 +129,10 @@ class HttpServer(object):
             try:
                 if not body:
                     body = self._statusCodes[code]
-                response = self.gen_response(code, body, headers)
+                response = self._gen_response(code, body, headers)
                 print response
             except InvalidHttpCodeError:
-                response = self.gen_response(
+                response = self._gen_response(
                     500,
                     self._statusCodes[code],
                     headers)
@@ -141,7 +141,7 @@ class HttpServer(object):
                 connection.sendall(response)
                 connection.close()
 
-    def process_request(self, request):
+    def _process_request(self, request):
         u"""Split status line into verb, URI, and protocol."""
         list_ = request.split("\r\n")
         status_line = list_[0].split()
