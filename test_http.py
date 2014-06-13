@@ -8,7 +8,7 @@ from http_server import (
 import socket
 import pytest
 import os
-import shutil
+
 
 @pytest.fixture(scope="session")
 def setup_test_resources(request):
@@ -25,6 +25,7 @@ def setup_test_resources(request):
         os.makedirs(path + "/testsubdirectory")
 
     def teardown():
+        import shutil
         path = os.getcwd() + "/root/testdir/"
         if not os.path.exists(path):
             import shutil.rmtree
@@ -34,7 +35,7 @@ def setup_test_resources(request):
 
 def test_200_ok():
     s = HttpServer()
-    assert s.gen_response(200) == "HTTP/1.1 200 OK\r\n\r\n"
+    assert s.gen_response(200) == "HTTP/1.1 200 OK\r\n"
 
 
 def test_200_ok_byte():
@@ -104,7 +105,7 @@ def test_parse_4():
 
 def test_gen_response_1():
     s = HttpServer()
-    assert s.gen_response(301) == 'HTTP/1.1 301 Moved Permanently\r\n\r\n'
+    assert s.gen_response(301) == 'HTTP/1.1 301 Moved Permanently\r\n'
 
 
 def test_retrieve_resource_1():
