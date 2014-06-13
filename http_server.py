@@ -71,8 +71,14 @@ class HttpServer(object):
         self._socket.close()
         self._socket = None
 
-    def gen_response(self, code, body=None, kwargs={}):
+    def gen_response(self, code, body=None, headers={}):
         u"""Generate response for the given HTTP status code."""
+        # Would like to use **kwargs instead of headers, but
+        # given that some of the headers are dash seperated,
+        # like Content-Type, some headers could not be passed
+        # in as simple keyword arguments.  Perhaps we should
+        # include headers={} for all headers with dashes but
+        # still handle any **kwargs as headers.
         response = []
         try:
             response.append("HTTP/1.1 {} {}".format(
@@ -80,11 +86,10 @@ class HttpServer(object):
         except KeyError:
             raise InvalidHttpCodeError(
                 u'{} is not a valid HTTP code'.format(code))
-        headers = kwargs.keys()
-        for header in headers:
+        for header, msg in headers.items():
                 response.append("{}: {}".format(
                     header,
-                    kwargs[header]))
+                    msg))
         response.append("")  # blank line between headers and body
         if body:
             response.append(body)
@@ -101,24 +106,21 @@ class HttpServer(object):
                 request.append(buffer_)
                 if len(buffer_) < buffersize:
                     break
-            print "Request: {}".format("".join(request))
-            body = None
+            print "\nRequest: {}".format("".join(request))
+            body = b""
+            headers = {}
             try:
                 body, content_type = self.process_request("".join(request))
             except ForbiddenError:
                 code = 403
             except NotGETRequestError:
                 code = 405
-                # connection.sendall(self.gen_response(405))
             except BadRequestError:
                 code = 400
-                # connection.sendall(self.gen_response(400))
             except NotHTTP1_1Error:
                 code = 505
-                # connection.sendall(self.gen_response(505))
             except ResourceNotFound:
                 code = 404
-                # connection.sendall(self.gen_response(404))
             else:
                 code = 200
                 headers = {
