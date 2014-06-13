@@ -4,10 +4,24 @@ from http_server import (
     NotGETRequestError,
     NotHTTP1_1Error,
     BadRequestError,
-    ResourceNotFound)
+    ResourceNotFound,
+    ForbiddenError)
 import socket
 import pytest
 import os
+
+
+_status_codes = {
+    200: b'OK',
+    301: b'Moved Permanently',
+    304: b'Not Modified',
+    400: b'Bad Request',
+    403: b'Forbidden',
+    404: b'Not Found',
+    405: b'Method Not Allowed',
+    500: b'Internal Server Error',
+    505: b'HTTP version not supported'
+    }
 
 
 @pytest.fixture(scope="session")
@@ -126,3 +140,21 @@ def test_retrieve_resources_3():
     s = HttpServer()
     body, content_type = s._retrieve_resource(b"")
     assert content_type == b"text/html"
+
+
+def test_forbidden_error1():
+    s = HttpServer()
+    with pytest.raises(ForbiddenError):
+        body, content_type = s._retrieve_resource(b"../../etc/password/")
+
+
+def test_gen_response2():
+    u"""Assert that 403 error response is generated."""
+    s = HttpServer()
+    assert s.gen_response(403) == b'HTTP/1.1 403 Forbidden\r\n'
+
+
+def test_gen_all_codes():
+    s = HttpServer()
+    for code, msg in _status_codes.items():
+        assert s.gen_response(code) == b'HTTP/1.1 {} {}\r\n'.format(code, msg)
