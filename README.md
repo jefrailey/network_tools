@@ -26,4 +26,4 @@ This simple HTTP Server uses threads to handle multiple, simultaneous requests. 
 * [Is there any way to kill a Thread in Python? - Stack Overflow](http://stackoverflow.com/questions/323972/is-there-any-way-to-kill-a-thread-in-python)
 
 ####Travis says:
-[![Travis](https://api.travis-ci.org/jefrailey/network_tools)](https://api.travis-ci.org/jefrailey/network_tools)
+[![Travis](https://travis-ci.org/jefrailey/network_tools.svg?branch=master)](https://travis-ci.org/jefrailey/network_tools.svg?branch=master)
