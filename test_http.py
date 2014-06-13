@@ -8,7 +8,7 @@ from http_server import (
 import socket
 import pytest
 import os
-
+import shutil
 
 @pytest.fixture(scope="session")
 def setup_test_resources(request):
@@ -62,14 +62,24 @@ def test_close_socket():
 
 
 def test_parse_one(setup_test_resources):
+    testdir = bytes(os.getcwd()) + b'/root/' + b'/testdir/'
     s = HttpServer()
-    body, content_type = s.process_request("GET /testdir/ HTTP/1.1")
+    dirs = []
+    files = []
+    for item in os.listdir(testdir):
+        if os.path.isdir(testdir + item):
+            dirs.append("{}/".format(item))
+        else:
+            files.append(item)
+    dirs.sort()
+    files.sort()
+    resources = dirs + files
     expected_body = []
     expected_body.append("<p>Directory Listing for /testdir/</p><ul>")
-    expected_body.append("<li> testfile1 </li>")
-    expected_body.append("<li> testfile2 </li>")
-    expected_body.append("<li> testsubdirectory </li></ul>")
-    #  Consider creating this on the fly with a call to os.listdir()
+    for res in resources:
+        expected_body.append('<li><a href="{}">{}</a></li>'.format(res, res))
+    expected_body.append("</ul>")
+    body, content_type = s.process_request("GET /testdir/ HTTP/1.1")
     assert body == "".join(expected_body)
     assert content_type == "text/html"
 
