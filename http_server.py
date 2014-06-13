@@ -32,6 +32,11 @@ class ResourceNotFound(Exception):
     pass
 
 
+class ForbiddenError(Exception):
+    u"""An exception to raise when a URI points to forbidden resource"""
+    pass
+
+
 class HttpServer(object):
     u"""Create an HTTP Server with the given endpoint."""
     def __init__(self, ip=b'127.0.0.1', port=50000, backlog=5):
@@ -45,6 +50,7 @@ class HttpServer(object):
             301: b'Moved Permanently',
             304: b'Not Modified',
             400: b'Bad Request',
+            403: b'Forbidden',
             404: b'Not Found',
             405: b'Method Not Allowed',
             500: b'Internal Server Error',
@@ -95,8 +101,12 @@ class HttpServer(object):
                 request.append(buffer_)
                 if len(buffer_) < buffersize:
                     break
+            print "Request: {}".format("".join(request))
+            body = None
             try:
                 body, content_type = self.process_request("".join(request))
+            except ForbiddenError:
+                code = 403
             except NotGETRequestError:
                 code = 405
                 # connection.sendall(self.gen_response(405))
@@ -115,10 +125,16 @@ class HttpServer(object):
                     'Content-Type': content_type,
                     'Content-Length': len(body)}
             try:
+                if not body:
+                    body = self._statusCodes[code]
                 response = self.gen_response(code, body, headers)
                 print response
             except InvalidHttpCodeError:
-                response = self.gen_response(400, body, headers)  # Is this the right HTTP code?
+                response = self.gen_response(
+                    500,
+                    self._statusCodes[code],
+                    headers)
+                # Is this the right HTTP code?
             finally:
                 connection.sendall(response)
                 connection.close()
@@ -141,6 +157,7 @@ class HttpServer(object):
         Get the resource specified by the uri if it exist.
         Otherwise, raise a Exception
         """
+        self._check_uri(uri)
         p = self._root + uri
         if isdir(p):
             body = ["<p>Directory Listing for "]
@@ -167,6 +184,10 @@ class HttpServer(object):
             return (body, content_type)
         else:
             raise ResourceNotFound
+
+    def _check_uri(self, uri):
+        if b".." in uri:
+            raise ForbiddenError
 
 
 if __name__ == "__main__":
