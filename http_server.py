@@ -34,7 +34,7 @@ class ResourceNotFound(Exception):
 
 class HttpServer(object):
     u"""Create an HTTP Server with the given endpoint."""
-    def __init__(self, ip=u'127.0.0.1', port=50000, backlog=5):
+    def __init__(self, ip=b'127.0.0.1', port=50000, backlog=5):
         self._ip = ip
         self._port = port
         self._backlog = backlog
