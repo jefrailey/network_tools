@@ -24,3 +24,6 @@ This simple HTTP Server uses threads to handle multiple, simultaneous requests. 
 * [Socket Communications](http://cewing.github.io/training.codefellows/assignments/day06/socket_exercise.html)
 * [Section 6 Response - Hypertext Transfer Protocol -- HTTP/1.1](http://www.w3.org/Protocols/rfc2616/rfc2616-sec6.html)
 * [Is there any way to kill a Thread in Python? - Stack Overflow](http://stackoverflow.com/questions/323972/is-there-any-way-to-kill-a-thread-in-python)
+
+####Travis says:
+[![Travis](https://api.travis-ci.org/jefrailey/network_tools)](https://api.travis-ci.org/jefrailey/network_tools)
