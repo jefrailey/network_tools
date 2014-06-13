@@ -188,6 +188,7 @@ class HttpServer(object):
             raise ResourceNotFound
 
     def _check_uri(self, uri):
+        u"""Raise ForbiddenError if URI contains potentially malicous chars."""
         if b".." in uri:
             raise ForbiddenError
 
